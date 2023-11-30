@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "ESNext"
+        ],
+        "module": "esnext",
+        "target": "esnext",
+        "moduleResolution": "bundler",
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+        "moduleDetection": "force",
+        "allowJs": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
+        "composite": true,
+        "downlevelIteration": true,
+        "allowSyntheticDefaultImports": true,
+        "types": [
+            "cypress",
+            "node",
+            "bun-types"
+        ],
+    },
+    "include": [
+        "**/*.ts",
+        "cypress.config.ts",
+        "cypress/**/*.ts"
+    ]
+}
