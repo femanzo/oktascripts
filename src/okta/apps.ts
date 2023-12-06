@@ -19,6 +19,7 @@ export const removeTestApp = async () => {
     log(err);
   }
 };
+
 export const listApplications = async () => {
   log('Running listApplications');
   return client.applicationApi.listApplications();

@@ -9,8 +9,6 @@ export const addFakeOktaUsersToMongo = async (samples = 1) => {
   const db = await getClient('omt-local');
   const oktaUsers = db.collection('OktaUser');
 
-  addUsersToBackup();
-
   const sampleUsers = [];
   const addUsers = [];
 
@@ -28,7 +26,7 @@ export const addFakeOktaUsersToMongo = async (samples = 1) => {
       const user = sampleUsers[i];
       user.oktaId = faker.string.hexadecimal({ length: 20, prefix: '00u' });
       user.externalId = user.oktaId;
-      user.runId = new ObjectId('6563f2e2c2df5b1f0af027cf');
+      user.runId = new ObjectId('65692b0396ca1712248db98a');
       user.object.id = user.oktaId;
       delete user._id;
 
@@ -51,16 +49,14 @@ export const assignUsersToBackup = async (runId: string) => {
   const db = await getClient('omt-local');
   const oktaUsers = db.collection('OktaUser');
 
-  oktaUsers.bulkWrite([
+  await oktaUsers.updateMany(
     {
-      updateMany: {
-        filter: {},
-        update: { $set: { runId: new ObjectId(runId) } },
-        upsert: true,
-      },
+      runId,
     },
-  ]);
+    [{ $set: { runId: new ObjectId(runId), lastModified: '$$NOW' } }],
+  );
 };
+
 // export const cleanUp = async () => {
 //   const db = await getClient();
 //   log('Cleaning....');

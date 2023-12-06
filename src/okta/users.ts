@@ -6,6 +6,7 @@ import { client } from './client';
 import { getRandomGroup } from './groups';
 
 const log = debug(import.meta.file);
+
 const emailMaxLength = 85;
 
 type FakeUserOptions = {
@@ -52,7 +53,14 @@ export const addFakeUser = async (options: FakeUserOptions) => {
     }
   }
 
-  return client.userApi.createUser(createUserRequest);
+  return client.userApi
+    .createUser(createUserRequest)
+    .then(() => {
+      log('User Added');
+    })
+    .catch((err) => {
+      log(err);
+    });
 };
 
 export const addFakeUsers = async (amount = 1) => {
