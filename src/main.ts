@@ -1,6 +1,7 @@
 import { input, rawlist } from '@inquirer/prompts';
 import debug from 'debug';
-import { addFakeOktaUsersToMongo, assignUsersToBackup } from './mongo';
+import { addFakeOktaUsersToMongo, assignUsersToLatestBackup } from './mongo';
+
 import {
   addFakeGroups,
   addFakeUsers,
@@ -111,7 +112,7 @@ async function main() {
   }
 
   if (commandInput === Actions.AssignUsersToBackup) {
-    await assignUsersToBackup('654276b4c1f4837b07062afc');
+    await assignUsersToLatestBackup();
   }
 
   log('done');

@@ -48,13 +48,36 @@ export const addFakeOktaUsersToMongo = async (samples = 1) => {
 export const assignUsersToBackup = async (runId: string) => {
   const db = await getClient('omt-local');
   const oktaUsers = db.collection('OktaUser');
-
   await oktaUsers.updateMany(
     {
       runId,
     },
     [{ $set: { runId: new ObjectId(runId), lastModified: '$$NOW' } }],
   );
+};
+
+
+export const assignUsersToLatestBackup = async (runId: string) => {
+  const db = await getClient('omt-local');
+  const runs = db.collection('Run');
+  const oktaUsers = db.collection('OktaUser');
+
+  const latestBackup = await runs.findOne({}, {
+    sort: {
+      lastModified: -1
+    }
+  })
+
+  
+  if(latestBackup) {
+    console.log(latestBackup._id)
+  await oktaUsers.updateMany(
+    {
+       runId: {$ne: latestBackup._id} 
+    },  
+    [{ $set: { externalId:  { $concat: [ "$externalId", latestBackup._id.toString().slice(0,4) ] }, runId: latestBackup._id, lastModified: '$$NOW' } }],
+  );
+  }
 };
 
 // export const cleanUp = async () => {

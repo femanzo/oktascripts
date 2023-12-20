@@ -2,10 +2,10 @@
   "editor.defaultFormatter": "biomejs.biome-nightly",
   "editor.formatOnSave": true,
   "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome-nightly",
+    "editor.defaultFormatter": "vscode.typescript-language-features",
     "editor.codeActionsOnSave": {
-      "quickfix.biome": true,
-      "source.organizeImports": true
+      "quickfix.biome": "explicit",
+      "source.organizeImports": "explicit"
     },
     "editor.snippets.codeActions.enabled": true
   },

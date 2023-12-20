@@ -2,6 +2,19 @@ import { ObjectId } from 'mongodb';
 import { getClient } from '../mongo';
 
 async function main() {
+  const transform1 = new TransformStream({
+    transform(chunk, controller) {
+      controller.enqueue(chunk);
+    },
+  });
+  const transform2 = new TransformStream({
+    transform(chunk, controller) {
+      controller.enqueue(chunk);
+    },
+  });
+
+  const reader = transform1.readable.pipeThrough(transform2).getReader();
+
   const client = await getClient('omt-local');
 
   console.time('countTime');
