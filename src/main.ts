@@ -39,7 +39,7 @@ const actions = [
 ];
 
 async function main() {
-  log(`Connected to Okta -> ${client.baseUrl} - ${client.apiToken}`);
+  log(`Connected to Okta -> ${client.baseUrl}`);
 
   const commandInput = await rawlist({
     message: 'What would you like to do?',

@@ -19,6 +19,7 @@
     "async-es": "^3.2.5",
     "axios": "^1.6.2",
     "axios-retry": "^3.9.0",
+    "bullmq": "^4.16.0",
     "debug": "^4.3.4",
     "inquirer": "^9.2.12",
     "lodash": "^4.17.21",

@@ -9,8 +9,8 @@ const log = debug(import.meta.file);
 debug.enable(import.meta.file);
 
 // Max size for the id search in a single okta request  
-const MAX_OKTA_SEARCH_SIZE = 5
-const MAX_CONCURRENT_REQUESTS = 10
+const MAX_OKTA_SEARCH_SIZE = 15
+const MAX_CONCURRENT_REQUESTS = 5
 
 async function main() {
     const db = await getClient('omt-local');
@@ -89,17 +89,32 @@ async function main() {
                     search: getOktaUsersQuery(batchIds)
                 })
 
-                users.on('data', user => {
-                    this.push(user)
-                    batchIds.splice(batchIds.indexOf(user.id), 1)
-                    // if (batchIds.length === 0) {
+                const allUsersProcessed = new Promise((resolve, reject) => {
+                    users.on('data', user => {
+                        this.push(user);
+                        console.log('user', user.profile.email);
+                    });
 
-                    // }
-                })
+                    users.on('end', () => {
+                        resolve();
+                    });
+
+                    users.on('error', (err) => {
+                        reject(err);
+                    });
+                });
+
+                allUsersProcessed.then(() => {
+                    callback();
+                }).catch(err => {
+                    callback(err);
+                });
+
                 callback();
             },
             flush(callback) {
-                callback()
+                log('flushing')
+                callback();
             }
         }),
         new Transform({
