@@ -2,7 +2,8 @@ import debug from 'debug';
 import { ObjectId } from 'mongodb';
 import { Transform, pipeline } from 'stream';
 import { getClient } from '../mongo';
-import { oktaGateway } from '../okta/http-client';
+import { oktaGateway } from './http-client';
+import { PromiseLimiter } from './PromiseLimiter.js';
 
 const log = debug(import.meta.file);
 
@@ -13,23 +14,26 @@ const MAX_OKTA_SEARCH_SIZE = 15
 const MAX_CONCURRENT_REQUESTS = 5
 
 async function main() {
+    log('main')
     const db = await getClient('omt-local');
     const oktaUsers = db.collection('OktaUser');
     const query = { runId: new ObjectId("657d05bc9d3b8bf81197b451") }
     const totalUsersCount = await oktaUsers.countDocuments(query)
+    log(`Total users to process: ${totalUsersCount}`)
 
     const oktaUsersCursor = oktaUsers.find(query, {
         noCursorTimeout: true,
         projection: {
             oktaId: 1
         }
-    }).batchSize(2000)
+    }).batchSize(5)
 
-    let oktaIds: string[] = []
+    let oktaIds = []
     let processedUsers = 0
+    let currentItem = 0
 
     const oktaUsersStream = oktaUsersCursor.stream()
-
+    log('oktaUsersStream created')
     oktaUsersStream.on('pause', () => {
         log(`oktaUserStream paused with ${oktaUsersCursor.bufferedCount()} items in buffer`)
     })
@@ -63,20 +67,22 @@ async function main() {
         new Transform({
             objectMode: true,
             transform(idsBatch, encoding, callback) {
-                log('Ongoing Endpoint Request Rate limiter ...')
-                const checkRateLimit = () => {
-                    // const endpointRateLimit = oktaGateway.getRateLimitForEndpoint('users')
-                    if (oktaGateway.totalOngoingRequests > MAX_CONCURRENT_REQUESTS) {
-                        log('Rate limit reached, waiting...')
-                        setTimeout(checkRateLimit, 1000)
-                    } else {
-                        this.push(idsBatch)
-                        callback();
-                    }
-                }
-                checkRateLimit()
+                const func =
+                    new Promise((resolve, reject) => {
+                        currentItem++
+                        const id = currentItem
+
+                        log(`resolving + ${id}`)
+                        setTimeout(() => {
+                            log(`resolved + ${id}`)
+                            resolve(idsBatch)
+                        }, 5000)
+                    })
+                this.push(func)
+                callback();
             },
         }),
+        new PromiseLimiter(2),
         /**
          * Receive user IDs from mongo and batch them to okta requests
          */
@@ -85,36 +91,36 @@ async function main() {
             transform(batchIds, encoding, callback) {
                 log(`Requesting ${batchIds.length} users from Okta`)
 
-                const users = oktaGateway.listUsers({
-                    search: getOktaUsersQuery(batchIds)
-                })
+                //     const users = oktaGateway.listUsers({
+                //         search: getOktaUsersQuery(batchIds)
+                //     })
 
-                const allUsersProcessed = new Promise((resolve, reject) => {
-                    users.on('data', user => {
-                        this.push(user);
-                        console.log('user', user.profile.email);
-                    });
+                //     const allUsersProcessed = new Promise((resolve, reject) => {
+                //         users.on('data', user => {
+                //             this.push(user);
+                //             console.log('user', user.profile.email);
+                //         });
 
-                    users.on('end', () => {
-                        resolve();
-                    });
+                //         users.on('end', () => {
+                //             resolve();
+                //         });
 
-                    users.on('error', (err) => {
-                        reject(err);
-                    });
-                });
+                //         users.on('error', (err) => {
+                //             reject(err);
+                //         });
+                //     });
 
-                allUsersProcessed.then(() => {
-                    callback();
-                }).catch(err => {
-                    callback(err);
-                });
+                //     allUsersProcessed.then(() => {
+                //         callback();
+                //     }).catch(err => {
+                //         callback(err);
+                //     });
 
-                callback();
-            },
-            flush(callback) {
-                log('flushing')
-                callback();
+                //     callback();
+                // },
+                // flush(callback) {
+                //     log('flushing')
+                //     callback();
             }
         }),
         new Transform({
@@ -135,7 +141,7 @@ async function main() {
     );
 }
 
-function getOktaUsersQuery(oktaIds: string[]) {
+function getOktaUsersQuery(oktaIds) {
     return oktaIds.map(id => `id eq "${id}"`).join(' or ')
 }
 

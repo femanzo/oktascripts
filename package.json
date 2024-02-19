@@ -16,11 +16,13 @@
   "dependencies": {
     "@inquirer/prompts": "^3.3.0",
     "@okta/okta-sdk-nodejs": "^7.0.1",
+    "@sentry/bun": "^7.101.1",
     "async-es": "^3.2.5",
     "axios": "^1.6.2",
     "axios-retry": "^3.9.0",
     "bullmq": "^4.16.0",
     "debug": "^4.3.4",
+    "dotenv": "^16.3.1",
     "inquirer": "^9.2.12",
     "lodash": "^4.17.21",
     "mongodb": "^6.3.0"

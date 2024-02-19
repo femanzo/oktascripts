@@ -27,7 +27,7 @@ class ExtendedDefaultRequestExecutor extends DefaultRequestExecutor {
 }
 
 const requestExecutor = new ExtendedDefaultRequestExecutor({
-  maxRetries: 1,
+  maxRetries: 100,
   requestTimeout: 0,
 });
 

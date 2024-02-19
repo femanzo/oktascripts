@@ -21,10 +21,12 @@
             "node",
             "bun-types"
         ],
+        "outDir": "dist",
     },
     "include": [
         "**/*.ts",
         "cypress.config.ts",
-        "cypress/**/*.ts"
+        "cypress/**/*.ts",
+        "src/okta/restore.js"
     ]
 }

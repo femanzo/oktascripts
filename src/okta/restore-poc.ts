@@ -15,8 +15,8 @@ const MAX_ACTIVE_JOBS = 50
 // Total queue size will always be between 
 // MAX_QUEUED_JOBS <-> (MAX_QUEUED_JOBS + MAX_ACTIVE_JOBS)
 // it's a good a idea to keep them about the same number
-const MAX_QUEUED_JOBS = 50
-const MONGO_CURSOR_BATCH_SIZE = 200
+const MAX_QUEUED_JOBS = 100
+const MONGO_CURSOR_BATCH_SIZE = 500
 
 // Worker factory creates a worker and a queue with the same name
 const { worker, queue } = workerFactory<string, User>({
@@ -26,7 +26,7 @@ const { worker, queue } = workerFactory<string, User>({
     // Simulate a 5 seconds processing time
     const ms = Math.random() * 5000
     await new Promise((resolve) => setTimeout(resolve, ms))
-    if (ms > 4900) { throw new Error('This job failed') }
+    if (ms > 900) { throw new Error('This job failed') }
     return { ms } as User
 })
 

@@ -2,17 +2,28 @@ import { faker } from '@faker-js/faker';
 import type { UserApiCreateUserRequest } from '@okta/okta-sdk-nodejs';
 import axios from 'axios';
 import debug from 'debug';
+import { workerFactory } from '../bullmq/queue';
 import { client } from './client';
 import { getRandomGroup } from './groups';
 
 const log = debug(import.meta.file);
+debug.enable(import.meta.file)
 
-const emailMaxLength = 85;
+const MAX_ACTIVE_JOBS = 100
+const emailMaxLength = 25;
 
 type FakeUserOptions = {
   addToRandomGroup: boolean;
   forceLongEmail: boolean;
 };
+
+// Worker factory creates a worker and a queue with the same name
+const { worker, queue } = workerFactory<UserApiCreateUserRequest, void>({
+  queueName: 'add-users-to-okta',
+  maxConcurrency: MAX_ACTIVE_JOBS
+}, async (job) => {
+  await client.userApi.createUser(job.data)
+})
 
 export const addFakeUser = async (options: FakeUserOptions) => {
   const firstName = faker.person.firstName();
@@ -32,19 +43,20 @@ export const addFakeUser = async (options: FakeUserOptions) => {
   }
 
   log(email, email.length);
-  const city = faker.location.city();
 
+  const city = faker.location.city();
   const createUserRequest: UserApiCreateUserRequest = {
     body: {
       profile: {
         firstName,
         lastName,
-        city,
         email,
         login: email,
-      },
-    },
-  };
+        city,
+      }
+    }
+  }
+
 
   if (options.addToRandomGroup) {
     const randomGroup = await getRandomGroup();
@@ -53,31 +65,28 @@ export const addFakeUser = async (options: FakeUserOptions) => {
     }
   }
 
-  return client.userApi
-    .createUser(createUserRequest)
-    .then(() => {
-      log('User Added');
-    })
-    .catch((err) => {
-      log(err);
-    });
+  await queue.add('add-user-' + email, createUserRequest, {
+    attempts: 3,
+    backoff: { type: 'fixed', delay: 60000, },
+  })
 };
 
 export const addFakeUsers = async (amount = 1) => {
-  const addedUsers = [];
+
+  await queue.clean(0, 9999999, 'completed')
+  await queue.clean(0, 9999999, 'wait')
+  await queue.clean(0, 9999999, 'active')
+  await queue.clean(0, 9999999, 'failed')
+
 
   for (let i = 0; i < amount; i++) {
-    addedUsers.push(
-      addFakeUser({
-        addToRandomGroup: true,
-        forceLongEmail: true,
-      }),
-    );
-  }
+    log('Added user', i + 1);
 
-  return Promise.allSettled(addedUsers).catch((err) => {
-    log(err);
-  });
+    await addFakeUser({
+      addToRandomGroup: false,
+      forceLongEmail: false,
+    })
+  }
 };
 
 export const countUsers = async () => {

@@ -1,6 +1,6 @@
 import { input, rawlist } from '@inquirer/prompts';
 import debug from 'debug';
-import { addFakeOktaUsersToMongo, assignUsersToLatestBackup } from './mongo';
+import { addFakeOktaSystemLogs, addFakeOktaUsersToMongo, assignUsersToLatestBackup } from './mongo';
 
 import {
   addFakeGroups,
@@ -21,10 +21,12 @@ enum Actions {
   RemoveTestApp = 5,
   AddUsersMongo = 6,
   AssignUsersToBackup = 7,
+  AddOktaSystemLogEvent = 8
 }
 
-debug.enable('*');
+
 const log = debug('main');
+debug.enable('main:*');
 
 const actions = [
   { name: 'Tenant info', value: Actions.DisplayTenantInfo },
@@ -34,6 +36,7 @@ const actions = [
   { name: 'List Apps', value: Actions.ListApps },
   { name: 'Remove Test App', value: Actions.RemoveTestApp },
   { name: 'Add Fake Users to MongoDB', value: Actions.AddUsersMongo },
+  { name: 'Add Fake OktaSystemLog MongoDB', value: Actions.AddOktaSystemLogEvent },
   { name: 'Assign Users to Backup', value: Actions.AssignUsersToBackup },
   { name: 'Exit', value: 0 },
 ];
@@ -54,26 +57,16 @@ async function main() {
 
     if (!countInput || Number.isNaN(Number(countInput))) {
       log('None added. Exiting...');
-      return;
     }
 
-    let res;
     if (commandInput === Actions.AddUsersToOkta) {
-      res = await addFakeUsers(Number(countInput));
+      await addFakeUsers(Number(countInput));
     }
 
     if (commandInput === Actions.AddGroups) {
-      res = await addFakeGroups(Number(countInput));
+      await addFakeGroups(Number(countInput));
     }
 
-    if (res?.length) {
-      const results = res.map((r) => {
-        if ('value' in r) {
-          return r.value?.profile?.name || r.value?.profile?.login;
-        }
-      });
-      log(results);
-    }
   }
 
   if (commandInput === Actions.ListUsers) {
@@ -111,13 +104,22 @@ async function main() {
     await addFakeOktaUsersToMongo(1000000);
   }
 
+  if (commandInput === Actions.AddOktaSystemLogEvent) {
+    const countInput = await input({
+      message: 'How many?',
+    });
+
+    await addFakeOktaSystemLogs(Number(countInput));
+  }
+
+
   if (commandInput === Actions.AssignUsersToBackup) {
     await assignUsersToLatestBackup();
   }
 
   log('done');
-
-  process.exit(0);
+  main()
+  // process.exit(0);
 }
 
 main();
