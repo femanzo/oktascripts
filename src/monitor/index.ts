@@ -9,6 +9,11 @@ Sentry.init({
     // Performance Monitoring
     tracesSampleRate: 1.0, // Capture 100% of the transactions
     release: "oktascripts@" + process.env.npm_package_version,
+    integrations: [
+        new Sentry.Integrations.Http({ tracing: true }),
+        new Sentry.Integrations.OnUncaughtException(),
+        new Sentry.Integrations.OnUnhandledRejection()
+    ]
 });
 
 main()
