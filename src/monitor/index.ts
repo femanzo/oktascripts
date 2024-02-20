@@ -15,7 +15,7 @@ main()
 
 function main() {
     try {
-        throw new Error('This is a new error');
+        throw new Error('This is a new error 2');
     } catch (e) {
         Sentry.captureException(e);
     }
