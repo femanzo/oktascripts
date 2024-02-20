@@ -20,7 +20,7 @@ main()
 
 function main() {
     try {
-        throw new Error('This is a new error 2');
+        throw new Error('This is a new error 33');
     } catch (e) {
         Sentry.captureException(e);
     }
